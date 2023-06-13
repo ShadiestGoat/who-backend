@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/shadiestgoat/who/db"
 	"github.com/shadiestgoat/log"
+	"github.com/shadiestgoat/who/db"
 )
 
 // Notice about question IDs:
@@ -136,7 +136,7 @@ func GetQuestionUsingPosition(section, question int, quizID string) (*Question, 
 	if question == 3 && section != 1 {
 		return genSpecialQuestion("sp-" + fmt.Sprint(section) + "-" + quizID)
 	}
-	
+
 	qID := ""
 	if section == 1 {
 
@@ -148,20 +148,19 @@ func GetQuestionUsingPosition(section, question int, quizID string) (*Question, 
 	} else {
 		order := []string{}
 		exception := 0
-	
+
 		err := db.QueryRowID(`SELECT order, drop_question FROM quiz WHERE id = $1`, quizID, &order, &exception)
-	
+
 		if err != nil {
 			return nil, ErrDBHandle(err)
 		}
-		
+
 		if exception == 0 {
 			qID = order[1]
 		} else {
 			qID = order[0]
 		}
 	}
-
 
 	return GetQuestion(qID + fmt.Sprint(section))
 }
@@ -248,7 +247,7 @@ func GetQuestions(quiz string) ([3]*FullQuestion, error) {
 			},
 			CorrectAnswer: 0,
 		}
-		
+
 		q[i] = tmpQ
 
 		err := rows.Scan(&tmpQ.ID, &tmpQ.IsMultipleChoice, &tmpQ.Answers, &tmpQ.CorrectAnswer, &tmpQ.Content)
@@ -267,7 +266,7 @@ func EditQuestion(q *FullQuestion) (*FullQuestion, error) {
 	if err := q.Sanitize(); err != nil {
 		return nil, err
 	}
-	
+
 	_, err := db.Exec(
 		`UPDATE questions SET is_multiple_choice = $1, answers = $2, correct_answer = $3, content = $4 WHERE id = $5`,
 		q.IsMultipleChoice, q.Answers, q.CorrectAnswer, q.Content, q.ID,
@@ -294,7 +293,7 @@ func genGoodQuestionResp(q *Question, err error) (*QuestionResp, error) {
 
 	return &QuestionResp{
 		Correct: true,
-		Next: q,
+		Next:    q,
 	}, nil
 }
 
@@ -325,8 +324,8 @@ func AnswerQuestion(id string, answer string) (*QuestionResp, error) {
 	quizID := ""
 
 	err := db.QueryRowID(
-		`SELECT is_multiple_choice, answers, correct_answer, quiz.order, drop_question, quiz.id FROM questions JOIN quiz ON questions.quiz = quiz.id WHERE questions.id = $1`, 
-		qID, 
+		`SELECT is_multiple_choice, answers, correct_answer, quiz.order, drop_question, quiz.id FROM questions JOIN quiz ON questions.quiz = quiz.id WHERE questions.id = $1`,
+		qID,
 		&multipleChoice, &answers, &correctAnswer, &order, &dropQuestion, &quizID,
 	)
 	if err != nil {
@@ -334,7 +333,7 @@ func AnswerQuestion(id string, answer string) (*QuestionResp, error) {
 	}
 
 	isCorrect := false
-	
+
 	if multipleChoice {
 		if correctAnswer >= len(answers) || correctAnswer < 0 {
 			isCorrect = true
@@ -389,7 +388,7 @@ func AnswerQuestion(id string, answer string) (*QuestionResp, error) {
 		return genGoodQuestionResp(GetQuestionUsingPosition(2, 1, quizID))
 	}
 
-	return genGoodQuestionResp(GetQuestionUsingPosition(int(section - '0'), (questionIndex + 1) + 1, quizID))
+	return genGoodQuestionResp(GetQuestionUsingPosition(int(section-'0'), (questionIndex+1)+1, quizID))
 }
 
 func answerSpecial(id string, answer string) (*QuestionResp, error) {

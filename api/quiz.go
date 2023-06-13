@@ -81,7 +81,7 @@ func NewQuiz(q *Quiz, rqs []*Question) (*Quiz, error) {
 
 	if len(rqs) != 3 {
 		return nil, &HTTPError{
-			Msg: "Need 3 questions",
+			Msg:    "Need 3 questions",
 			Status: 400,
 		}
 	}
@@ -155,9 +155,9 @@ func DeleteQuiz(id string) (*Quiz, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	_, err = db.Exec(`DELETE FROM quiz WHERE id = $1`, id)
-	
+
 	if err != nil {
 		return nil, ErrServerErr
 	}
@@ -180,9 +180,9 @@ func GetQuiz(id string) (*Quiz, error) {
 	}
 
 	err := db.QueryRowID(
-		`SELECT author, deadname, deadlastname, chosenname, chosenlastname, nickname, order, drop_question, redirect WHERE id = $1`, 
+		`SELECT author, deadname, deadlastname, chosenname, chosenlastname, nickname, order, drop_question, redirect WHERE id = $1`,
 		id,
-		&q.AuthorID, &q.DeadNames, &q.DeadLastName, &q.ChosenNames, &q.ChosenLastName, &q.Nickname, &q.Order, &q.DropQuestion, &q.Redirect, 
+		&q.AuthorID, &q.DeadNames, &q.DeadLastName, &q.ChosenNames, &q.ChosenLastName, &q.Nickname, &q.Order, &q.DropQuestion, &q.Redirect,
 	)
 
 	if err != nil {

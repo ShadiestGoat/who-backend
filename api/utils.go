@@ -22,14 +22,14 @@ func cleanString(s *string, minLength, maxLength int, key string) error {
 
 	if minLength >= 0 && l < minLength {
 		return &HTTPError{
-			Msg: fmt.Sprintf("Key '%s' is too short", key),
+			Msg:    fmt.Sprintf("Key '%s' is too short", key),
 			Status: 400,
 		}
 	}
 
 	if maxLength >= 0 && l > maxLength {
 		return &HTTPError{
-			Msg: fmt.Sprintf("Key '%s' is too long", key),
+			Msg:    fmt.Sprintf("Key '%s' is too long", key),
 			Status: 400,
 		}
 	}
@@ -64,7 +64,7 @@ const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 func randGoodString(l int) string {
 	b := make([]byte, l)
 	for i := range b {
-		b[i] = letters[rand.Int63() % int64(len(letters))]
+		b[i] = letters[rand.Int63()%int64(len(letters))]
 	}
 	return string(b)
 }

@@ -91,7 +91,7 @@ func Insert(table string, columns []string, values [][]any) (int64, error) {
 		b, _ := json.MarshalIndent(values, "", "\t")
 		log.Error("Couldn't insert into table '%s' (%v), Values:\n%s", table, columns, string(b))
 	}
-	
+
 	return n, err
 }
 

@@ -30,7 +30,7 @@ func (a *atomicMap) Insert(uname string) bool {
 func (a *atomicMap) Free(uname string) {
 	a.Lock()
 	defer a.Unlock()
-	
+
 	delete(a.m, uname)
 }
 
@@ -46,13 +46,13 @@ func NewUser(uname, password string) (id, token string, err error) {
 	if err := cleanString(&password, 7, 33, "password"); err != nil {
 		return "", "", err
 	}
-	
+
 	if db.Exists(`ppl`, `username = $1`, uname) || !unameLock.Insert(uname) {
 		return "", "", ErrUniqueUname
 	}
 
 	passwordHash, err := generateFromPassword(password)
-	
+
 	if log.ErrorIfErr(err, "generating hash") {
 		return "", "", ErrServerErr
 	}
@@ -70,7 +70,7 @@ func NewUser(uname, password string) (id, token string, err error) {
 	if err != nil {
 		return "", "", ErrDBHandle(err)
 	}
-	
+
 	unameLock.Free(uname)
 	unameLock.Free(token)
 
@@ -81,7 +81,7 @@ func EditPassword(id string, oldPassword string, newPassword string) (string, er
 	password := ""
 
 	err := db.QueryRowID(`SELECT password FROM ppl WHERE id = $1`, id, &password)
-	
+
 	if err != nil {
 		return "", ErrDBHandle(err)
 	}
@@ -110,7 +110,7 @@ func EditPassword(id string, oldPassword string, newPassword string) (string, er
 			break
 		}
 	}
-	
+
 	_, err = db.Exec(`UPDATE ppl SET password = $1, token = $2 WHERE id = $3`, hash, token, id)
 
 	if err != nil {

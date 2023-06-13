@@ -12,7 +12,7 @@ type Router struct {
 	*chi.Mux
 }
 
-type Handler func (w http.ResponseWriter, r *http.Request) (any, error)
+type Handler func(w http.ResponseWriter, r *http.Request) (any, error)
 
 func wResp(v any, w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(v)
@@ -74,7 +74,7 @@ func routerUsers() http.Handler {
 
 	r.Get(`/users`, func(w http.ResponseWriter, r *http.Request) (any, error) {
 		// decode stuff here, body etc
-		username := chi.URLParam(r, )
+		username := chi.URLParam(r)
 
 		return api.GetUser(username)
 	})

@@ -20,7 +20,7 @@ var ErrNotFound = &HTTPError{
 }
 
 var ErrBadBody = &HTTPError{
-	Msg: "You got bad http body",
+	Msg:    "You got bad http body",
 	Status: 400,
 }
 

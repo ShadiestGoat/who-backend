@@ -12,7 +12,8 @@ import (
 type ctx int
 
 const (
-	CTX_AUTHOR ctx = iota
+	CTX_USER ctx = iota
+	CTX_QUESTION_AUTHOR
 )
 
 func middlewareAuth(next http.Handler) http.Handler {
@@ -32,7 +33,7 @@ func middlewareAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), CTX_AUTHOR, id)))
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), CTX_USER, id)))
 	})
 }
 
@@ -47,7 +48,39 @@ func middlewareQuiz(next http.Handler) http.Handler {
 			return
 		}
 
-		if author != r.Context().Value(CTX_AUTHOR).(string) {
+		if author != r.Context().Value(CTX_USER).(string) {
+			wRespErr(api.ErrNoAuth, w)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func middlewareQuestion(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		author := ""
+
+		qID := chi.URLParam(r, "id")
+		qID = qID[:len(qID)-1]
+
+		err := db.QueryRowID(`SELECT quiz.author FROM questions JOIN quiz ON questions.quiz = quiz.id WHERE questions.id = $1`, qID, &author)
+
+		if err != nil {
+			wRespErr(api.ErrDBHandle(err), w)
+			return
+		}
+
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), CTX_QUESTION_AUTHOR, author)))
+	})
+}
+
+func middlewareQuestionAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := r.Context().Value(CTX_USER).(string)
+		author := r.Context().Value(CTX_QUESTION_AUTHOR).(string)
+
+		if user != author {
 			wRespErr(api.ErrNoAuth, w)
 			return
 		}

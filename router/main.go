@@ -1,81 +1,119 @@
 package router
 
 import (
-	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/shadiestgoat/who/api"
+	"github.com/shadiestgoat/who/db"
 )
 
-type Router struct {
-	*chi.Mux
+func MainRouter() http.Handler {
+	r := newRouter()
+
+	r.Mount(`/quizzes`, routerQuizzes())
+	r.Mount(`/previews`, routerPreview())
+
+	return r
 }
 
-type Handler func(w http.ResponseWriter, r *http.Request) (any, error)
 
-func wResp(v any, w http.ResponseWriter) {
-	json.NewEncoder(w).Encode(v)
+type reqNewQuiz struct {
+	Quiz api.Quiz `json:"quiz"`
+	Questions []*api.Question `json:"questions"`	
 }
 
-func wrap(h Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		resp, err := h(w, r)
-		if err != nil {
-			if httpErr, ok := err.(*api.HTTPError); ok {
-				w.WriteHeader(httpErr.Status)
-				resp = httpErr
-			} else {
-				w.WriteHeader(501)
-				resp = &api.HTTPError{
-					Msg: err.Error(),
-				}
-			}
+func routerQuizzes() http.Handler {
+	r := newRouter()
+
+	r.Use(middlewareAuth)
+
+	r.Post("/", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		body := &reqNewQuiz{}
+
+		if err := unmarshalNotOk(w, r, &body); err != nil {
+			return nil, err
 		}
 
-		wResp(resp, w)
-	}
+		body.Quiz.AuthorID = r.Context().Value(CTX_AUTHOR).(string)
+
+		return api.NewQuiz(&body.Quiz, body.Questions)
+	})
+
+	r.Handle("/{id}", routerQuizID())
+
+	return r
 }
 
-func (r *Router) Get(path string, h Handler) {
-	r.Mux.Get(path, wrap(h))
+func routerQuizID() http.Handler {
+	r := newRouter()
+
+	r.Use(middlewareQuiz)
+
+	r.Post("/", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		body := api.Quiz{}
+
+		if err := unmarshalNotOk(w, r, &body); err != nil {
+			return nil, err
+		}
+
+		body.AuthorID = r.Context().Value(CTX_AUTHOR).(string)
+		body.ID = chi.URLParam(r, "id")
+
+		return api.EditQuiz(&body)
+	})
+
+	r.Delete("/", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		return api.DeleteQuiz(chi.URLParam(r, "id"))
+	})
+
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		return api.GetQuiz(chi.URLParam(r, "id"))
+	})
+
+	return r
 }
 
-func (r *Router) Post(path string, h Handler) {
-	r.Mux.Post(path, wrap(h))
+type respPreview struct {
+	Question1 *api.Question
+	Title     string
 }
 
-func (r *Router) Put(path string, h Handler) {
-	r.Mux.Put(path, wrap(h))
-}
+func routerPreview() http.Handler {
+	r := newRouter()
 
-func (r *Router) Delete(path string, h Handler) {
-	r.Mux.Delete(path, wrap(h))
-}
+	r.Get(`/{id}`, func(w http.ResponseWriter, r *http.Request) (any, error) {
+		quizID := chi.URLParam(r, "id")
 
-func (r *Router) Patch(path string, h Handler) {
-	r.Mux.Patch(path, wrap(h))
-}
+		chosenName := ""
 
-func NewRouter() *Router {
-	return &Router{
-		Mux: chi.NewRouter(),
-	}
-}
+		err := db.QueryRowID(`SELECT chosenname[1] FROM quiz WHERE id = $1`, quizID, &chosenName)
 
-func MainRouter() {
-	r := NewRouter()
+		if err != nil {
+			return nil, api.ErrDBHandle(err)
+		}
 
-	r.Mount("/users", routerUsers())
-}
+		resp := &respPreview{
+			Question1: &api.Question{},
+			Title:     "Who the fuck is " + strings.ToUpper(chosenName[:1]) + chosenName[1:],
+		}
 
-func routerUsers() http.Handler {
-	r := NewRouter()
-
-	r.Get(`/users`, func(w http.ResponseWriter, r *http.Request) (any, error) {
-		// decode stuff here, body etc
-		username := chi.URLParam(r)
-
-		return api.GetUser(username)
+		return 
 	})
 }
+
+/*
+
+GET  /preview/{id}
+POST /questions/{id}  
+
+POST /auth *
+
+*/
+// Get
+// New
+// Edit Quiz (POST)
+// Delete
+// First question
+// Answer

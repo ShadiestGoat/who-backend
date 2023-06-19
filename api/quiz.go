@@ -1,13 +1,15 @@
 package api
 
 import (
+	"strings"
+
 	"github.com/shadiestgoat/who/db"
 	"github.com/shadiestgoat/who/snownode"
 )
 
 type Quiz struct {
 	ID       string
-	AuthorID string
+	AuthorID string `json:"-"`
 
 	DeadNames    []string
 	DeadLastName string
@@ -23,50 +25,52 @@ type Quiz struct {
 	Redirect string
 }
 
+func verifyName(inp *string) error {
+	if strings.Contains(" ", *inp) {
+		return ErrBadName
+	}
+
+	return nil
+}
+
 // Sanitizes the quiz for step 1 (ie. creation). Does not sanitize or verify ID, AuthorID
 func (q *Quiz) Sanitize1() error {
-	var err error
-
-	if err = cleanString(&q.DeadLastName, 2, 33, "dead Last Name"); err != nil {
-		return err
-	}
-	if err = cleanString(&q.ChosenLastName, -1, 33, "chosen Last Name"); err != nil {
-		return err
-	}
-	if err = cleanString(&q.Nickname, 2, 33, "nickname"); err != nil {
-		return err
-	}
-	if err = cleanString(&q.DeadLastName, 0, 33, "redirect"); err != nil {
-		return err
-	}
-
-	if q.DeadNames, err = cleanStringArr(q.DeadNames, 2, 33, "dead Name"); err != nil {
-		return err
-	}
-	if q.ChosenNames, err = cleanStringArr(q.ChosenNames, 2, 33, "chosen Name"); err != nil {
-		return err
+	errCombo := []error{
+		cleanString(&q.DeadLastName, 2, 33, "dead Last Name"),
+		cleanString(&q.ChosenLastName, -1, 33, "chosen Last Name"),
+		cleanString(&q.Nickname, 2, 33, "nickname"),
+		cleanString(&q.DeadLastName, 0, 33, "redirect"),
+		verifyName(&q.ChosenLastName),
+		verifyName(&q.DeadLastName),
+		cleanStringArr(q.DeadNames, 2, 33, "dead Name", verifyName),
+		cleanStringArr(q.ChosenNames, 2, 33, "chosen Name", verifyName),
 	}
 
 	if len(q.DeadNames) == 0 || len(q.DeadNames) > 4 {
-		return &HTTPError{
+		errCombo = append(errCombo, &HTTPError{
 			Msg:    "Need 1-4 dead names",
 			Status: 400,
-		}
+		})
 	}
 	if len(q.ChosenNames) == 0 || len(q.ChosenNames) > 4 {
-		return &HTTPError{
+		errCombo = append(errCombo, &HTTPError{
 			Msg:    "Need 1-4 chosen names",
 			Status: 400,
-		}
+		})
 	}
 
 	if q.DropQuestion > 2 || q.DropQuestion < 0 {
-		return &HTTPError{
+		errCombo = append(errCombo, &HTTPError{
 			Msg:    "Drop question out of bounds",
 			Status: 400,
-		}
+		})
 	}
 
+	err := newHTTPErrorStack(errCombo)
+	if err != nil {
+		return err
+	}
+	
 	if q.ChosenLastName == "" {
 		q.ChosenLastName = q.DeadLastName
 	}

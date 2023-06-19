@@ -44,7 +44,7 @@ func (q *Question) Sanitize() error {
 	if err = cleanString(&q.Content, 2, 65, "questions.content"); err != nil {
 		return err
 	}
-	if q.Answers, err = cleanStringArr(q.Answers, 2, 33, "questions.answers"); err != nil {
+	if err = cleanStringArr(q.Answers, 2, 33, "questions.answers"); err != nil {
 		return err
 	}
 

@@ -37,15 +37,20 @@ func cleanString(s *string, minLength, maxLength int, key string) error {
 	return nil
 }
 
-func cleanStringArr(inp []string, minLength, maxLength int, key string) ([]string, error) {
+func cleanStringArr(inp []string, minLength, maxLength int, key string, isOkSpecial ...func (inp *string) error) error {
 	for i := range inp {
 		err := cleanString(&inp[i], minLength, maxLength, key)
 		if err != nil {
-			return nil, err
+			return err
+		}
+		for _, isOk := range isOkSpecial {
+			if err := isOk(&inp[i]); err != nil {
+				return err
+			}
 		}
 	}
 
-	return inp, nil
+	return nil
 }
 
 func Capitalize(s string) string {

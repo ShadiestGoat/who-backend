@@ -1,6 +1,11 @@
 TODO:
 - add support for passworded quizes
-- add family friendly mode
+- add family friendly mode:
+  - who THE FUCK is Lucy
+  - who THE HELL is Lucy
+  - who THE HECK is Lucy
+  - who IN THE NAME OF SANITY is Lucy
+  - who is Lucy
 
 profile:
 - id string primary key

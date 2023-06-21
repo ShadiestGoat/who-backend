@@ -8,21 +8,22 @@ import (
 )
 
 type Quiz struct {
-	ID       string
+	ID       string `json:"id"`
 	AuthorID string `json:"-"`
 
-	DeadNames    []string
-	DeadLastName string
+	DeadNames    []string `json:"deadNames"`
+	DeadLastName string `json:"deadLastName"`
 
-	ChosenNames    []string
-	ChosenLastName string
+	ChosenNames    []string  `json:"chosenNames"`
+	ChosenLastName string  `json:"chosenLastName"`
 
-	Nickname string
+	Nickname string  `json:"nickname"`
 
-	Order        []string
-	DropQuestion int
+	// TODO: figure out json tags for these
+	Order        []string `json:"order"`
+	DropQuestion int 
 
-	Redirect string
+	Redirect string  `json:"redirect"`
 }
 
 func verifyName(inp *string) error {

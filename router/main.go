@@ -80,8 +80,8 @@ func routerQuizID() http.Handler {
 }
 
 type respPreview struct {
-	Question1 *api.Question
-	Title     string
+	Question1 *api.Question `json:"question"`
+	Title     string `json:"title"`
 }
 
 func routerPreview() http.Handler {
